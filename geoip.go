@@ -338,3 +338,46 @@ func (gi *GeoIP) GetCountry_v6(ip string) (cc string, netmask int) {
 	}
 	return
 }
+
+// Takes an IPv4 address string and returns the country name for that IP
+// and the netmask for that IP range.
+func (gi *GeoIP) GetCountryName(ip string) (cc string, netmask int) {
+	if gi.db == nil {
+		return
+	}
+
+	gi.mu.Lock()
+	defer gi.mu.Unlock()
+
+	cip := C.CString(ip)
+	defer C.free(unsafe.Pointer(cip))
+	ccountry := C.GeoIP_country_name_by_addr(gi.db, cip)
+
+	if ccountry != nil {
+		cc = C.GoString(ccountry)
+		netmask = int(C.GeoIP_last_netmask(gi.db))
+		return
+	}
+	return
+}
+
+// GetCountryName_v6 works the same as GetCountryName except for IPv6 addresses, be sure to
+// load a database with IPv6 data to get any results.
+func (gi *GeoIP) GetCountryName_v6(ip string) (cc string, netmask int) {
+	if gi.db == nil {
+		return
+	}
+
+	gi.mu.Lock()
+	defer gi.mu.Unlock()
+
+	cip := C.CString(ip)
+	defer C.free(unsafe.Pointer(cip))
+	ccountry := C.GeoIP_country_name_by_addr_v6(gi.db, cip)
+	if ccountry != nil {
+		cc = C.GoString(ccountry)
+		netmask = int(C.GeoIP_last_netmask(gi.db))
+		return
+	}
+	return
+}
